@@ -10,7 +10,10 @@ CORS(app)
 def hello_world():
   return 'Hello, Docker!'
 
-
+@app.route('/time')
+def get_current_time():
+    return {'time': time.time()} 
+    
 @app.route('/val')
 def get_val():
     mydb = mysql.connector.connect(
