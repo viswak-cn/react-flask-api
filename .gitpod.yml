@@ -1,11 +1,26 @@
-# List the start up tasks. Learn more https://www.gitpod.io/docs/config-start-tasks/
+# An example from https://confluence.devfactory.com/display/DevSpaces/YAML+Examples
+# image should be 'windows' to spawn a windows instance
+image: windows
+# WindowsConfig is optional, but allows to select custom images. Currently only windows-prod is provided for general use, more will be added later with specific toolchains preloaded.
+windowsConfig:
+  amiName: windows/workspace-prod
+  instanceType: t3.xlarge
+# Tasks work generally the same as tasks for linux instances. Use powershell syntax. Refer to the custom commands page for useful custom commands available to windows instances.
 tasks:
-  - init: echo 'init script' # runs during prebuild
+  - name: Build
+    init: |
+      choco install nodejs --version 10.24.1 -y
+      choco install python2 microsoft-build-tools visualstudio2017-workload-vctools visualstudio2017-workload-webbuildtools nuget.commandline netfx-4.7-devpack -y
+      # After choco install above, we may need to reload the PATH variable to pick up on env config changes. Use reload-path for this otherwise you may see errors about freshly installed packages not being found
+      reload-path
+      npm config set msvs_version 2017
+      npm config set msvs_version 2017 --global
     command: |
-      pip install -r requirements.txt
-      python api.py
-# List the ports to expose. Learn more https://www.gitpod.io/docs/config-ports/
-ports:
-  - port: 5000
-    visibility: public
-    onOpen: open-browser
+      reload-path
+      # Since no IDE is active, we need to set MSBuild path manually. The path is slightly different depending on the version of VS you intend to use.
+      $env:Path="$env:Path;C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MsBuild\15.0\Bin"
+      $env:Path="$env:Path;C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\"
+      # Run your build commands as usual once path is set up
+      $env:BUILD_HOME="$pwd"
+      cd .\Resources\GACAssembliesDependencies; .\!install.cmd
+      cd $env:BUILD_HOME; .\BuildAll.bat
